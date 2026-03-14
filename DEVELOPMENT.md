@@ -3,6 +3,7 @@
 ## Project Setup
 
 ### Prerequisites
+
 - Node.js 18+ (check with `node --version`)
 - npm (included with Node.js)
 - Claude CLI installed and in PATH
@@ -19,12 +20,14 @@ cd client && npm install && cd ..
 ### Running in Development
 
 **Terminal 1 (Backend)**
+
 ```bash
 npm run dev
 # Runs on http://localhost:3000
 ```
 
 **Terminal 2 (Frontend)**
+
 ```bash
 cd client
 npm run dev
@@ -39,27 +42,32 @@ Then open http://localhost:5173 in your browser.
 ### Backend (Express + Node.js)
 
 **server/index.js**
+
 - Express server with REST API
 - Serves React build in production
 - Initializes scheduler on startup
 
 **server/db.js**
+
 - SQLite database operations
 - Schema: `prompts` and `runs` tables
 - Config stored in `config` table
 
 **server/scheduler.js**
+
 - Uses node-cron to schedule jobs
 - Maintains in-memory job registry
 - Syncs with DB on changes
 
 **server/runner.js**
+
 - Spawns Claude CLI as child process
 - Captures stdout/stderr
 - Streams output via SSE
 - Creates run records in DB
 
 **server/router.js**
+
 - Routes output to email/file/webhook
 - Uses nodemailer for SMTP
 - Formats output based on type
@@ -67,23 +75,27 @@ Then open http://localhost:5173 in your browser.
 ### Frontend (React 18 + Vite)
 
 **client/src/App.jsx**
+
 - Main app component
 - Sidebar navigation
 - Page routing
 
 **client/src/components/**
+
 - `PromptList.jsx` — Display and manage prompts
 - `PromptEditor.jsx` — Create/edit prompts with test runner
 - `RunHistory.jsx` — View past runs with output
 - `Settings.jsx` — Configure Claude path and email
 
 **client/index.html**
+
 - Tailwind CSS from CDN
 - Vite entry point
 
 ## Database Schema
 
 ### prompts table
+
 ```sql
 CREATE TABLE prompts (
   id INTEGER PRIMARY KEY,
@@ -99,6 +111,7 @@ CREATE TABLE prompts (
 ```
 
 ### runs table
+
 ```sql
 CREATE TABLE runs (
   id INTEGER PRIMARY KEY,
@@ -113,6 +126,7 @@ CREATE TABLE runs (
 ```
 
 ### config table
+
 ```sql
 CREATE TABLE config (
   key TEXT PRIMARY KEY,
@@ -125,6 +139,7 @@ CREATE TABLE config (
 All API routes return JSON.
 
 ### Prompts
+
 - `GET /api/prompts` → Array of all prompts
 - `POST /api/prompts` → Create new prompt
 - `GET /api/prompts/:id` → Get single prompt
@@ -132,15 +147,18 @@ All API routes return JSON.
 - `DELETE /api/prompts/:id` → Delete prompt
 
 ### Runs
+
 - `POST /api/prompts/:id/run` → Trigger immediate run
 - `GET /api/prompts/:id/runs` → Get run history (limit=50)
 - `GET /api/runs/:id/stream` → SSE stream of live output
 
 ### Config
+
 - `GET /api/config` → Get current config
 - `PUT /api/config` → Update config
 
 ### Health
+
 - `GET /api/health` → Server status
 
 ## Testing
@@ -212,6 +230,7 @@ PORT=3000            # Server port (default 3000)
 ## Common Issues & Solutions
 
 ### Claude CLI Not Found
+
 ```bash
 # Test if Claude is installed
 which claude
@@ -223,6 +242,7 @@ export PATH="/usr/local/bin:$PATH"
 ```
 
 ### Database Locked Error
+
 ```bash
 # Caused by multiple connections
 # Solution: Ensure only one server instance
@@ -231,6 +251,7 @@ pm2 start ecosystem.config.js
 ```
 
 ### Port Already in Use
+
 ```bash
 # Find process on port 3000
 lsof -i :3000
@@ -243,6 +264,7 @@ PORT=3001 npm start
 ```
 
 ### Vite Hot Reload Not Working
+
 ```bash
 # Clear Vite cache
 rm -rf node_modules/.vite
@@ -269,6 +291,7 @@ npm run dev
 ## Debugging
 
 ### Backend Logs
+
 ```bash
 # pm2 logs
 pm2 logs claudecron
@@ -279,6 +302,7 @@ tail -f ~/.pm2/logs/claudecron-out.log
 ```
 
 ### Frontend Logs
+
 ```bash
 # Browser console
 # Open DevTools: F12 or Cmd+Option+I
@@ -286,6 +310,7 @@ tail -f ~/.pm2/logs/claudecron-out.log
 ```
 
 ### Database Debugging
+
 ```bash
 # Check DB file size
 du -h data/claudecron.db
@@ -321,10 +346,13 @@ sqlite3 data/claudecron.db "PRAGMA integrity_check;"
 ### Adding a New API Route
 
 1. Add to **server/index.js:**
+
    ```javascript
    app.get('/api/new-endpoint', (req, res) => {
      // Handle request
-     res.json({ /* response */ });
+     res.json({
+       /* response */
+     });
    });
    ```
 
@@ -336,6 +364,7 @@ sqlite3 data/claudecron.db "PRAGMA integrity_check;"
 ### Adding Database Fields
 
 1. Modify schema in **server/db.js:**
+
    ```javascript
    db.exec(`ALTER TABLE prompts ADD COLUMN new_field TEXT`);
    ```
@@ -347,6 +376,7 @@ sqlite3 data/claudecron.db "PRAGMA integrity_check;"
 ## Deployment
 
 ### systemd Service
+
 ```ini
 [Unit]
 Description=claudecron
@@ -368,6 +398,7 @@ WantedBy=multi-user.target
 ### Cloud Platforms
 
 **Heroku:** Add Procfile
+
 ```
 web: npm start
 ```

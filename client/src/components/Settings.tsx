@@ -174,9 +174,8 @@ export default function Settings() {
             <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">Gmail setup</p>
               <p>
-                Use{' '}
-                <code className="bg-background px-1 rounded">smtp.gmail.com</code> port 587 with an
-                App Password (requires 2FA).
+                Use <code className="bg-background px-1 rounded">smtp.gmail.com</code> port 587 with
+                an App Password (requires 2FA).
               </p>
               <a
                 href="https://myaccount.google.com/apppasswords"

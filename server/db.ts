@@ -151,11 +151,13 @@ export function updatePrompt(
 ): Prompt {
   const configStr =
     typeof outputConfig === 'string' ? outputConfig : JSON.stringify(outputConfig || {});
-  db.prepare(`
+  db.prepare(
+    `
     UPDATE prompts
     SET name = ?, prompt_text = ?, schedule = ?, output_type = ?, output_config = ?, enabled = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
-  `).run(name, promptText, schedule, outputType, configStr, enabled ? 1 : 0, id);
+  `
+  ).run(name, promptText, schedule, outputType, configStr, enabled ? 1 : 0, id);
   return getPrompt(id)!;
 }
 
@@ -190,13 +192,18 @@ export function appendRunOutput(runId: number, chunk: string): void {
 }
 
 export function finishRun(runId: number, status: string, error: string | null = null): void {
-  db.prepare(`
+  db.prepare(
+    `
     UPDATE runs SET finished_at = CURRENT_TIMESTAMP, status = ?, error = ? WHERE id = ?
-  `).run(status, error, runId);
+  `
+  ).run(status, error, runId);
 }
 
 export function getConfig(): AppConfig {
-  const rows = db.prepare('SELECT key, value FROM config').all() as { key: string; value: string }[];
+  const rows = db.prepare('SELECT key, value FROM config').all() as {
+    key: string;
+    value: string;
+  }[];
   const config: Record<string, string> = {};
   rows.forEach((row) => {
     config[row.key] = row.value;

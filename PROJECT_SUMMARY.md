@@ -7,6 +7,7 @@ A complete, production-ready local-first Claude prompt scheduler with a beautifu
 ## What's Included
 
 ### Backend (Node.js + Express)
+
 - ✅ Express server with REST API
 - ✅ SQLite database (better-sqlite3) with schema and migrations
 - ✅ node-cron scheduler for prompt execution
@@ -17,6 +18,7 @@ A complete, production-ready local-first Claude prompt scheduler with a beautifu
 - ✅ Full error handling and logging
 
 ### Frontend (React 18 + Vite)
+
 - ✅ Modern React with hooks
 - ✅ Tailwind CSS styling via CDN
 - ✅ Responsive design
@@ -26,6 +28,7 @@ A complete, production-ready local-first Claude prompt scheduler with a beautifu
 - ✅ Run history with expandable output
 
 ### DevOps
+
 - ✅ pm2 ecosystem config for process management
 - ✅ One-command install script (bash)
 - ✅ .gitignore and LICENSE
@@ -74,6 +77,7 @@ claudecron/
 ## Key Features
 
 ### ✅ Fully Implemented
+
 - Create, read, update, delete prompts
 - Schedule prompts with cron expressions
 - Run prompts immediately or on schedule
@@ -89,6 +93,7 @@ claudecron/
 - Responsive mobile-friendly design
 
 ### ✅ Production Ready
+
 - Error handling throughout
 - Input validation
 - CORS enabled
@@ -99,22 +104,23 @@ claudecron/
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | Express.js 4.18 |
-| Database | SQLite 3 (better-sqlite3) |
-| Scheduling | node-cron 3.0 |
-| Email | nodemailer 6.9 |
-| CLI | Claude (Anthropic) |
-| Frontend | React 18 |
-| Build | Vite 5 |
-| CSS | Tailwind CSS (CDN) |
-| Process Mgmt | pm2 |
-| Node | 18+ |
+| Layer        | Technology                |
+| ------------ | ------------------------- |
+| Backend      | Express.js 4.18           |
+| Database     | SQLite 3 (better-sqlite3) |
+| Scheduling   | node-cron 3.0             |
+| Email        | nodemailer 6.9            |
+| CLI          | Claude (Anthropic)        |
+| Frontend     | React 18                  |
+| Build        | Vite 5                    |
+| CSS          | Tailwind CSS (CDN)        |
+| Process Mgmt | pm2                       |
+| Node         | 18+                       |
 
 ## API Routes
 
 ### Prompts
+
 ```
 GET    /api/prompts                - List all
 POST   /api/prompts                - Create
@@ -126,11 +132,13 @@ GET    /api/prompts/:id/runs       - Get history
 ```
 
 ### Runs
+
 ```
 GET    /api/runs/:id/stream        - SSE output stream
 ```
 
 ### Config
+
 ```
 GET    /api/config                 - Get config
 PUT    /api/config                 - Update config
@@ -139,6 +147,7 @@ PUT    /api/config                 - Update config
 ## Database Schema
 
 ### prompts
+
 - id (PK)
 - name (UNIQUE)
 - prompt_text
@@ -150,6 +159,7 @@ PUT    /api/config                 - Update config
 - updated_at
 
 ### runs
+
 - id (PK)
 - prompt_id (FK)
 - started_at
@@ -159,23 +169,27 @@ PUT    /api/config                 - Update config
 - error (text)
 
 ### config
+
 - key (PK)
 - value
 
 ## Getting Started
 
 ### Installation
+
 ```bash
 bash install.sh
 ```
 
 ### Development
+
 ```bash
 npm run dev        # Backend
 cd client && npm run dev  # Frontend
 ```
 
 ### Production
+
 ```bash
 npm run build
 npm start
@@ -230,19 +244,17 @@ All features have been implemented and tested:
 
 1. **README.md** (7000+ words)
    - Features, quick start, config, usage, examples, troubleshooting
-   
 2. **QUICK_START.md**
    - 5-minute setup guide for first-time users
-   
 3. **DEVELOPMENT.md**
    - Architecture, schema, API docs, debugging, deployment
-   
 4. **This file (PROJECT_SUMMARY.md)**
    - Overview of what's included
 
 ## Files Delivered
 
 Total: 20+ files including:
+
 - 5 backend JS files (server/)
 - 5 frontend React components (client/src/)
 - 2 config files

@@ -125,7 +125,15 @@ app.put('/api/prompts/:id', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid cron expression' });
     }
 
-    const updatedPrompt = db.updatePrompt(id, name, prompt_text, schedule, output_type, output_config, enabled);
+    const updatedPrompt = db.updatePrompt(
+      id,
+      name,
+      prompt_text,
+      schedule,
+      output_type,
+      output_config,
+      enabled
+    );
 
     scheduler.reschedulePrompt(id);
 

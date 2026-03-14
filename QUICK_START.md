@@ -5,10 +5,12 @@ Get claudecron running in 5 minutes.
 ## Step 1: Prerequisites
 
 Make sure you have:
+
 - **Node.js 18+** — Download from [nodejs.org](https://nodejs.org)
 - **Claude CLI** — Install from [Anthropic docs](https://docs.anthropic.com/claude/reference/claude-cli-quickstart)
 
 Verify:
+
 ```bash
 node --version      # Should be v18 or higher
 npm --version       # Should be included with Node
@@ -33,6 +35,7 @@ bash install.sh
 ```
 
 This will:
+
 1. Install backend dependencies
 2. Install frontend dependencies
 3. Build the React app
@@ -81,21 +84,25 @@ Watch the output stream in real-time!
 ## Stopping & Restarting
 
 ### Stop claudecron
+
 ```bash
 pm2 stop claudecron
 ```
 
 ### Restart
+
 ```bash
 pm2 restart claudecron
 ```
 
 ### View logs
+
 ```bash
 pm2 logs claudecron
 ```
 
 ### Completely stop
+
 ```bash
 pm2 delete claudecron
 ```
@@ -103,19 +110,23 @@ pm2 delete claudecron
 ## Common Issues
 
 **"Claude: command not found"**
+
 - Make sure Claude CLI is installed: `which claude`
 - Or set the path in Settings
 
 **"Port 3000 already in use"**
+
 - Kill the process: `lsof -i :3000` then `kill -9 <PID>`
 - Or use different port: `PORT=3001 npm start`
 
 **"Email not sending"**
+
 - Check SMTP credentials in Settings
 - For Gmail, make sure you're using an [App Password](https://myaccount.google.com/apppasswords)
 - Check pm2 logs: `pm2 logs claudecron`
 
 **"Database locked"**
+
 - Stop all servers: `pm2 kill`
 - Restart: `pm2 start ecosystem.config.js`
 
@@ -147,6 +158,7 @@ pm2 startup
 This prints a command to run. Copy and paste it.
 
 Then:
+
 ```bash
 pm2 save
 ```

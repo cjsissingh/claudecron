@@ -10,7 +10,9 @@ type PromptWithConfig = Prompt & { output_config: Record<string, unknown> };
 
 let mailer: ReturnType<typeof nodemailer.createTransport> | null = null;
 
-export function initializeMailer(config: AppConfig): ReturnType<typeof nodemailer.createTransport> | null {
+export function initializeMailer(
+  config: AppConfig
+): ReturnType<typeof nodemailer.createTransport> | null {
   if (!config.smtp || !config.smtp.user || !config.smtp.password) {
     return null;
   }
@@ -33,7 +35,11 @@ export function initializeMailer(config: AppConfig): ReturnType<typeof nodemaile
   return mailer;
 }
 
-export function sendEmail(prompt: PromptWithConfig, output: string, config: AppConfig): Promise<unknown> {
+export function sendEmail(
+  prompt: PromptWithConfig,
+  output: string,
+  config: AppConfig
+): Promise<unknown> {
   if (!mailer) {
     throw new Error('Email not configured. Please configure SMTP settings.');
   }
@@ -118,9 +124,7 @@ export function appendToFile(prompt: PromptWithConfig, output: string): void {
     throw new Error('File path not specified in output config');
   }
 
-  const resolvedPath = path.isAbsolute(filePath)
-    ? filePath
-    : path.join(process.cwd(), filePath);
+  const resolvedPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
 
   const dir = path.dirname(resolvedPath);
   if (!fs.existsSync(dir)) {

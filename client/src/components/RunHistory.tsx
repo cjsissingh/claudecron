@@ -3,15 +3,7 @@ import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
-import {
-  X,
-  CheckCircle,
-  XCircle,
-  Loader2,
-  ChevronDown,
-  ChevronUp,
-  Calendar,
-} from 'lucide-react';
+import { X, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import type { Prompt } from '../App';
 
 interface Run {

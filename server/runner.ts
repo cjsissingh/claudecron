@@ -49,7 +49,9 @@ export function getRun(runId: number): RunState | undefined {
   return activeRuns.get(runId);
 }
 
-export async function runPrompt(promptId: number): Promise<{ runId: number; output: string; status: string }> {
+export async function runPrompt(
+  promptId: number
+): Promise<{ runId: number; output: string; status: string }> {
   const prompt = db.getPrompt(promptId);
   if (!prompt) {
     throw new Error(`Prompt ${promptId} not found`);
@@ -64,9 +66,13 @@ export async function runPrompt(promptId: number): Promise<{ runId: number; outp
     const claudePath = config.claudePath || 'claude';
 
     return new Promise((resolve, reject) => {
-      const child = spawn(claudePath, ['-p', prompt.prompt_text, '--dangerously-skip-permissions'], {
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
+      const child = spawn(
+        claudePath,
+        ['-p', prompt.prompt_text, '--dangerously-skip-permissions'],
+        {
+          stdio: ['ignore', 'pipe', 'pipe'],
+        }
+      );
 
       let output = '';
       let errorOutput = '';
@@ -97,7 +103,12 @@ export async function runPrompt(promptId: number): Promise<{ runId: number; outp
         db.finishRun(runId, status, errorMsg);
 
         try {
-          routeOutput(prompt as Prompt & { output_config: Record<string, unknown> }, output, status, errorMsg);
+          routeOutput(
+            prompt as Prompt & { output_config: Record<string, unknown> },
+            output,
+            status,
+            errorMsg
+          );
         } catch (e) {
           console.error('Error routing output:', e);
         }

@@ -15,6 +15,7 @@ A local-first Claude prompt scheduler with a beautiful web UI. Create, schedule,
 ## Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - Claude CLI installed and available in PATH (or configure the path in settings)
 - (Optional) Email provider credentials if you want to route output to email
@@ -54,11 +55,13 @@ To enable email output, configure SMTP settings in the web UI under Settings:
    - **Default From** — Email address to send from
 
 #### Gmail Setup (recommended)
+
 1. Enable 2-factor authentication on your Google account
 2. Generate an [App Password](https://myaccount.google.com/apppasswords)
 3. Use `smtp.gmail.com:465` with your App Password
 
 #### Other Providers
+
 - **Outlook/Office 365**: `smtp-mail.outlook.com:587`
 - **SendGrid**: `smtp.sendgrid.net:587`
 - **Custom server**: Use your server details
@@ -98,6 +101,7 @@ Use [crontab.guru](https://crontab.guru) for help building expressions.
 ### Example Prompts
 
 #### Daily News Digest
+
 ```
 You are a news summarizer. Today's date is [insert current date].
 
@@ -115,6 +119,7 @@ Make it concise and easy to scan.
 **Output**: Email to yourself
 
 #### Weekly Code Review Reminder
+
 ```
 Generate a checklist of 10 code review best practices for pull requests.
 
@@ -131,6 +136,7 @@ Format as a markdown checklist that a team can use.
 **Output**: File `/tmp/code-review-checklist.md`
 
 #### Hourly System Health Check
+
 ```
 Analyze this system's health and performance based on the most recent metrics available to you.
 
@@ -254,6 +260,7 @@ Prompts and run history are stored in `claudecron.db` (SQLite). The database is 
 ### Schema
 
 **prompts table**
+
 - `id` — Primary key
 - `name` — Prompt name
 - `prompt_text` — The actual prompt
@@ -265,6 +272,7 @@ Prompts and run history are stored in `claudecron.db` (SQLite). The database is 
 - `updated_at` — Timestamp
 
 **runs table**
+
 - `id` — Primary key
 - `prompt_id` — Foreign key to prompts
 - `started_at` — When execution started
@@ -276,6 +284,7 @@ Prompts and run history are stored in `claudecron.db` (SQLite). The database is 
 ## Troubleshooting
 
 ### Claude CLI Not Found
+
 Make sure the Claude CLI is installed and in your PATH. You can configure a custom path in Settings.
 
 ```bash
@@ -285,19 +294,23 @@ claude --version
 ```
 
 ### Prompts Not Running
+
 1. Check that the prompt is **enabled** (toggle in prompt list)
 2. Verify the cron expression is valid (use crontab.guru)
 3. Check the logs in the web UI under Run History
 4. Check pm2 logs: `pm2 logs claudecron`
 
 ### Email Not Sending
+
 1. Verify SMTP credentials in Settings
 2. Check that "Default From" email is configured
 3. Check pm2 logs for SMTP errors: `pm2 logs claudecron`
 4. For Gmail, ensure you're using an [App Password](https://myaccount.google.com/apppasswords), not your account password
 
 ### Database Locked
+
 If you get "database is locked" errors:
+
 1. Close any other connections to the database
 2. Restart the app: `pm2 restart claudecron`
 3. Check for stuck processes: `pm2 info claudecron`
@@ -314,6 +327,7 @@ If you get "database is locked" errors:
 ### systemd Service
 
 Create `/etc/systemd/system/claudecron.service`:
+
 ```ini
 [Unit]
 Description=claudecron - Claude Prompt Scheduler
@@ -334,6 +348,7 @@ WantedBy=multi-user.target
 ```
 
 Then:
+
 ```bash
 sudo systemctl enable claudecron
 sudo systemctl start claudecron
