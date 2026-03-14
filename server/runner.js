@@ -64,7 +64,6 @@ async function runPrompt(promptId) {
       // Spawn the Claude CLI process
       const child = spawn(claudePath, ['-p', prompt.prompt_text, '--dangerously-skip-permissions'], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        shell: true
       });
 
       let output = '';
