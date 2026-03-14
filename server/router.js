@@ -35,7 +35,7 @@ function sendEmail(prompt, output, config) {
   }
 
   const emailConfig = prompt.output_config;
-  if (!emailConfig || !emailConfig.email) {
+  if (!emailConfig || !emailConfig.to) {
     throw new Error('Email recipient not specified in output config');
   }
 
@@ -91,7 +91,7 @@ function sendEmail(prompt, output, config) {
     mailer.sendMail(
       {
         from: config.defaultFrom,
-        to: emailConfig.email,
+        to: emailConfig.to,
         subject,
         html
       },
@@ -109,7 +109,7 @@ function sendEmail(prompt, output, config) {
 }
 
 function appendToFile(prompt, output) {
-  const filePath = prompt.output_config?.filePath;
+  const filePath = prompt.output_config?.path;
   if (!filePath) {
     throw new Error('File path not specified in output config');
   }
@@ -133,7 +133,7 @@ function appendToFile(prompt, output) {
 }
 
 function sendToWebhook(prompt, output, status, error) {
-  const webhookUrl = prompt.output_config?.webhookUrl;
+  const webhookUrl = prompt.output_config?.url;
   if (!webhookUrl) {
     throw new Error('Webhook URL not specified in output config');
   }
