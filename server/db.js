@@ -57,8 +57,8 @@ function initDatabase() {
   const defaultConfig = {
     claudePath: 'claude',
     smtpHost: '',
-    smtpPort: '465',
-    smtpSecure: '1',
+    smtpPort: '587',
+    smtpSecure: '0',
     smtpUser: '',
     smtpPassword: '',
     defaultFrom: ''

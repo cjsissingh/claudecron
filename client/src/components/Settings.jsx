@@ -6,6 +6,7 @@ import { Label } from './ui/label'
 import { Separator } from './ui/separator'
 import { Badge } from './ui/badge'
 import { Save, CheckCircle, Bot, Mail } from 'lucide-react'
+import { Switch } from './ui/switch'
 
 export default function Settings() {
   const [config, setConfig] = useState({
@@ -135,6 +136,17 @@ export default function Settings() {
                   onChange={e => updateSmtp('password', e.target.value)}
                 />
               </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>SSL/TLS</Label>
+                <p className="text-xs text-muted-foreground">Enable for port 465, disable for port 587 (STARTTLS)</p>
+              </div>
+              <Switch
+                checked={config.smtp?.secure || false}
+                onCheckedChange={val => updateSmtp('secure', val)}
+              />
             </div>
 
             <Separator />
