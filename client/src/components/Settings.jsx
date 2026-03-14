@@ -15,7 +15,7 @@ export default function Settings() {
       port: 587,
       secure: false,
       user: '',
-      pass: '',
+      password: '',
     },
     defaultFrom: '',
   })
@@ -131,8 +131,8 @@ export default function Settings() {
                   id="smtpPass"
                   type="password"
                   placeholder="App password"
-                  value={config.smtp?.pass || ''}
-                  onChange={e => updateSmtp('pass', e.target.value)}
+                  value={config.smtp?.password || ''}
+                  onChange={e => updateSmtp('password', e.target.value)}
                 />
               </div>
             </div>
