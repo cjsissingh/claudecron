@@ -3,6 +3,7 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 const https = require('https');
 const http = require('http');
+const db = require('./db');
 
 let mailer = null;
 
@@ -198,7 +199,7 @@ async function routeOutput(prompt, output, status, error) {
 
   try {
     if (outputType === 'email') {
-      await sendEmail(prompt, output, prompt._config);
+      await sendEmail(prompt, output, db.getConfig());
     } else if (outputType === 'file') {
       appendToFile(prompt, output);
     } else if (outputType === 'webhook') {

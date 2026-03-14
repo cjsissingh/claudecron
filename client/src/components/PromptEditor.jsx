@@ -55,17 +55,12 @@ export default function PromptEditor({ prompt, onSave, onCancel }) {
       abortRef.current = es
 
       es.onmessage = (e) => {
-        const data = JSON.parse(e.data)
-        if (data.type === 'chunk') {
-          setTestOutput(prev => prev + data.content)
-        } else if (data.type === 'done') {
+        if (e.data === '[DONE]') {
           setTestStatus('success')
           setTestRunning(false)
           es.close()
-        } else if (data.type === 'error') {
-          setTestStatus('error')
-          setTestRunning(false)
-          es.close()
+        } else {
+          setTestOutput(prev => prev + e.data.replace(/\\n/g, '\n'))
         }
       }
 

@@ -74,6 +74,31 @@ app.post('/api/prompts', (req, res) => {
   }
 });
 
+// Ad-hoc test run (unsaved prompt text)
+app.post('/api/prompts/test', async (req, res) => {
+  try {
+    const { promptText } = req.body;
+    if (!promptText) {
+      return res.status(400).json({ error: 'promptText is required' });
+    }
+
+    // Create a temporary prompt record so runner can use it
+    const tempPrompt = db.createPrompt('__test__', promptText, '* * * * *', 'log', null);
+
+    // Start run asynchronously, clean up temp prompt after
+    runner.runPrompt(tempPrompt.id).finally(() => {
+      setTimeout(() => db.deletePrompt(tempPrompt.id), 30000);
+    });
+
+    // Get the run ID that runner just created
+    const runs = db.getRunHistory(tempPrompt.id, 1);
+    res.json({ runId: runs[0]?.id });
+  } catch (error) {
+    console.error('Error running test prompt:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/prompts/:id', (req, res) => {
   try {
     const prompt = db.getPrompt(parseInt(req.params.id));
