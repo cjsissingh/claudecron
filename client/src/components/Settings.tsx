@@ -1,57 +1,61 @@
-import { useState, useEffect } from 'react'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
-import { Separator } from './ui/separator'
-import { Badge } from './ui/badge'
-import { Save, CheckCircle, Bot, Mail } from 'lucide-react'
-import { Switch } from './ui/switch'
+import { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Separator } from './ui/separator';
+import { Save, CheckCircle, Bot, Mail } from 'lucide-react';
+import { Switch } from './ui/switch';
+
+interface SmtpConfig {
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  password: string;
+}
+
+interface Config {
+  claudePath: string;
+  smtp: SmtpConfig;
+  defaultFrom: string;
+}
 
 export default function Settings() {
-  const [config, setConfig] = useState({
+  const [config, setConfig] = useState<Config>({
     claudePath: '',
-    smtp: {
-      host: '',
-      port: 587,
-      secure: false,
-      user: '',
-      password: '',
-    },
+    smtp: { host: '', port: 587, secure: false, user: '', password: '' },
     defaultFrom: '',
-  })
-  const [saved, setSaved] = useState(false)
-  const [loading, setLoading] = useState(false)
+  });
+  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetch('/api/config')
-      .then(r => r.json())
-      .then(data => setConfig(data))
-      .catch(console.error)
-  }, [])
+      .then((r) => r.json())
+      .then((data: Config) => setConfig(data))
+      .catch(console.error);
+  }, []);
 
-  const handleSave = async (e) => {
-    e.preventDefault()
-    setLoading(true)
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
     try {
       await fetch('/api/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
-      })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const updateSmtp = (field, value) => {
-    setConfig(prev => ({
-      ...prev,
-      smtp: { ...prev.smtp, [field]: value }
-    }))
-  }
+  const updateSmtp = <K extends keyof SmtpConfig>(field: K, value: SmtpConfig[K]) => {
+    setConfig((prev) => ({ ...prev, smtp: { ...prev.smtp, [field]: value } }));
+  };
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -76,7 +80,7 @@ export default function Settings() {
                 id="claudePath"
                 placeholder="/usr/local/bin/claude"
                 value={config.claudePath || ''}
-                onChange={e => setConfig(prev => ({ ...prev, claudePath: e.target.value }))}
+                onChange={(e) => setConfig((prev) => ({ ...prev, claudePath: e.target.value }))}
                 className="font-mono"
               />
               <p className="text-xs text-muted-foreground">Leave empty to use system default</p>
@@ -100,7 +104,7 @@ export default function Settings() {
                   id="smtpHost"
                   placeholder="smtp.gmail.com"
                   value={config.smtp?.host || ''}
-                  onChange={e => updateSmtp('host', e.target.value)}
+                  onChange={(e) => updateSmtp('host', e.target.value)}
                   className="font-mono"
                 />
               </div>
@@ -111,7 +115,7 @@ export default function Settings() {
                   type="number"
                   placeholder="587"
                   value={config.smtp?.port || ''}
-                  onChange={e => updateSmtp('port', parseInt(e.target.value))}
+                  onChange={(e) => updateSmtp('port', parseInt(e.target.value))}
                 />
               </div>
             </div>
@@ -123,7 +127,7 @@ export default function Settings() {
                   id="smtpUser"
                   placeholder="you@gmail.com"
                   value={config.smtp?.user || ''}
-                  onChange={e => updateSmtp('user', e.target.value)}
+                  onChange={(e) => updateSmtp('user', e.target.value)}
                 />
               </div>
               <div className="space-y-1.5">
@@ -133,7 +137,7 @@ export default function Settings() {
                   type="password"
                   placeholder="App password"
                   value={config.smtp?.password || ''}
-                  onChange={e => updateSmtp('password', e.target.value)}
+                  onChange={(e) => updateSmtp('password', e.target.value)}
                 />
               </div>
             </div>
@@ -141,11 +145,13 @@ export default function Settings() {
             <div className="flex items-center justify-between">
               <div>
                 <Label>SSL/TLS</Label>
-                <p className="text-xs text-muted-foreground">Enable for port 465, disable for port 587 (STARTTLS)</p>
+                <p className="text-xs text-muted-foreground">
+                  Enable for port 465, disable for port 587 (STARTTLS)
+                </p>
               </div>
               <Switch
                 checked={config.smtp?.secure || false}
-                onCheckedChange={val => updateSmtp('secure', val)}
+                onCheckedChange={(val) => updateSmtp('secure', val)}
               />
             </div>
 
@@ -158,7 +164,7 @@ export default function Settings() {
                 type="email"
                 placeholder="claudecron@yourdomain.com"
                 value={config.defaultFrom || ''}
-                onChange={e => setConfig(prev => ({ ...prev, defaultFrom: e.target.value }))}
+                onChange={(e) => setConfig((prev) => ({ ...prev, defaultFrom: e.target.value }))}
               />
               <p className="text-xs text-muted-foreground">
                 Used as the sender for all outgoing emails
@@ -167,8 +173,17 @@ export default function Settings() {
 
             <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">Gmail setup</p>
-              <p>Use <code className="bg-background px-1 rounded">smtp.gmail.com</code> port 587 with an App Password (requires 2FA).</p>
-              <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              <p>
+                Use{' '}
+                <code className="bg-background px-1 rounded">smtp.gmail.com</code> port 587 with an
+                App Password (requires 2FA).
+              </p>
+              <a
+                href="https://myaccount.google.com/apppasswords"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
                 Generate app password ↗
               </a>
             </div>
@@ -189,5 +204,5 @@ export default function Settings() {
         </div>
       </form>
     </div>
-  )
+  );
 }

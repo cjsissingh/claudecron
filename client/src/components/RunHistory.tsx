@@ -1,52 +1,85 @@
-import { useState, useEffect } from 'react'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card'
-import { Button } from './ui/button'
-import { Badge } from './ui/badge'
-import { Separator } from './ui/separator'
-import { X, Clock, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, Calendar } from 'lucide-react'
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Separator } from './ui/separator';
+import {
+  X,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  Calendar,
+} from 'lucide-react';
+import type { Prompt } from '../App';
 
-function formatDate(dateStr) {
-  if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleString()
+interface Run {
+  id: number;
+  prompt_id: number;
+  started_at: string;
+  finished_at: string | null;
+  status: string;
+  output: string | null;
+  error: string | null;
 }
 
-function formatDuration(ms) {
-  if (!ms) return '—'
-  if (ms < 1000) return `${ms}ms`
-  return `${(ms / 1000).toFixed(1)}s`
+interface RunHistoryProps {
+  prompt: Prompt;
+  onClose: () => void;
 }
 
-function StatusBadge({ status }) {
-  if (status === 'success') return <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" />Success</Badge>
-  if (status === 'error') return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />Error</Badge>
-  if (status === 'running') return <Badge variant="running" className="gap-1"><Loader2 className="w-3 h-3 animate-spin" />Running</Badge>
-  return <Badge variant="secondary">{status}</Badge>
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleString();
 }
 
-export default function RunHistory({ prompt, onClose }) {
-  const [runs, setRuns] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [expandedId, setExpandedId] = useState(null)
+function StatusBadge({ status }: { status: string }) {
+  if (status === 'success')
+    return (
+      <Badge variant="success" className="gap-1">
+        <CheckCircle className="w-3 h-3" />
+        Success
+      </Badge>
+    );
+  if (status === 'error')
+    return (
+      <Badge variant="destructive" className="gap-1">
+        <XCircle className="w-3 h-3" />
+        Error
+      </Badge>
+    );
+  if (status === 'running')
+    return (
+      <Badge variant="running" className="gap-1">
+        <Loader2 className="w-3 h-3 animate-spin" />
+        Running
+      </Badge>
+    );
+  return <Badge variant="secondary">{status}</Badge>;
+}
+
+export default function RunHistory({ prompt, onClose }: RunHistoryProps) {
+  const [runs, setRuns] = useState<Run[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!prompt) return
     const fetchRuns = async () => {
       try {
-        const res = await fetch(`/api/prompts/${prompt.id}/runs`)
-        const data = await res.json()
-        setRuns(data)
+        const res = await fetch(`/api/prompts/${prompt.id}/runs`);
+        const data = (await res.json()) as Run[];
+        setRuns(data);
       } catch (err) {
-        console.error(err)
+        console.error(err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    fetchRuns()
-    const interval = setInterval(fetchRuns, 3000)
-    return () => clearInterval(interval)
-  }, [prompt])
-
-  if (!prompt) return null
+    };
+    fetchRuns();
+    const interval = setInterval(fetchRuns, 3000);
+    return () => clearInterval(interval);
+  }, [prompt]);
 
   return (
     <div className="space-y-4">
@@ -64,11 +97,13 @@ export default function RunHistory({ prompt, onClose }) {
         <CardContent className="p-4 space-y-2 text-sm">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Schedule</span>
-            <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{prompt.schedule}</span>
+            <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">
+              {prompt.schedule}
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Output</span>
-            <span className="capitalize">{prompt.outputType || prompt.output_type}</span>
+            <span className="capitalize">{prompt.outputType}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Status</span>
@@ -78,6 +113,8 @@ export default function RunHistory({ prompt, onClose }) {
           </div>
         </CardContent>
       </Card>
+
+      <Separator />
 
       <div>
         <h3 className="text-sm font-medium mb-3">Runs</h3>
@@ -101,14 +138,16 @@ export default function RunHistory({ prompt, onClose }) {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <StatusBadge status={run.status} />
-                      <span className="text-xs text-muted-foreground">{formatDate(run.startedAt || run.started_at)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(run.started_at)}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{formatDuration(run.durationMs)}</span>
-                      {expandedId === run.id
-                        ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
-                        : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-                      }
+                      {expandedId === run.id ? (
+                        <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -125,5 +164,5 @@ export default function RunHistory({ prompt, onClose }) {
         )}
       </div>
     </div>
-  )
+  );
 }

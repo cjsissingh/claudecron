@@ -1,52 +1,51 @@
-const cron = require('node-cron');
-const db = require('./db');
-const runner = require('./runner');
+import cron from 'node-cron';
+import * as db from './db';
+import { runPrompt } from './runner';
+import type { Prompt } from './db';
 
-const scheduledJobs = new Map();
+interface ScheduledJob {
+  id: number;
+  name: string;
+  schedule: string;
+  enabled: boolean;
+}
 
-async function schedulePrompt(prompt) {
-  // If prompt is already scheduled, unschedule it first
+const scheduledJobs = new Map<number, cron.ScheduledTask>();
+
+export async function schedulePrompt(prompt: Prompt): Promise<void> {
   if (scheduledJobs.has(prompt.id)) {
     unschedulePrompt(prompt.id);
   }
 
-  // Only schedule if enabled
   if (!prompt.enabled) {
     return;
   }
 
   try {
-    // Validate cron expression
     if (!cron.validate(prompt.schedule)) {
-      console.error(
-        `Invalid cron expression for prompt ${prompt.id}: ${prompt.schedule}`,
-      );
+      console.error(`Invalid cron expression for prompt ${prompt.id}: ${prompt.schedule}`);
       return;
     }
 
-    // Schedule the job
     const job = cron.schedule(prompt.schedule, async () => {
       console.log(`[Scheduler] Running prompt: ${prompt.name}`);
       try {
-        await runner.runPrompt(prompt.id);
+        await runPrompt(prompt.id);
       } catch (error) {
-        console.error(
-          `[Scheduler] Error running prompt ${prompt.id}:`,
-          error.message,
-        );
+        console.error(`[Scheduler] Error running prompt ${prompt.id}:`, (error as Error).message);
       }
     });
 
     scheduledJobs.set(prompt.id, job);
     console.log(
-      `[Scheduler] Scheduled prompt ${prompt.id}: "${prompt.name}" with cron "${prompt.schedule}"`,
+      `[Scheduler] Scheduled prompt ${prompt.id}: "${prompt.name}" with cron "${prompt.schedule}"`
     );
   } catch (error) {
     console.error(`[Scheduler] Error scheduling prompt ${prompt.id}:`, error);
   }
 }
 
-function unschedulePrompt(promptId) {
+export function unschedulePrompt(promptId: number): void {
   const job = scheduledJobs.get(promptId);
   if (job) {
     job.stop();
@@ -55,54 +54,43 @@ function unschedulePrompt(promptId) {
   }
 }
 
-function reschedulePrompt(promptId) {
+export function reschedulePrompt(promptId: number): void {
   const prompt = db.getPrompt(promptId);
   if (prompt) {
     schedulePrompt(prompt);
   }
 }
 
-async function rescheduleAll() {
-  // Stop all existing jobs
-  scheduledJobs.forEach((job, id) => {
+async function rescheduleAll(): Promise<void> {
+  scheduledJobs.forEach((job) => {
     job.stop();
   });
   scheduledJobs.clear();
 
-  // Load and schedule all enabled prompts
   const prompts = db.getAllPrompts();
-  prompts.forEach((prompt) => {
+  for (const prompt of prompts) {
     if (prompt.enabled) {
-      schedulePrompt(prompt);
+      await schedulePrompt(prompt);
     }
-  });
+  }
 
   console.log(`[Scheduler] Rescheduled ${scheduledJobs.size} prompts`);
 }
 
-async function initScheduler() {
+export async function initScheduler(): Promise<void> {
   console.log('[Scheduler] Initializing scheduler...');
   await rescheduleAll();
   console.log('[Scheduler] Scheduler initialized');
 }
 
-function getScheduledJobs() {
-  return Array.from(scheduledJobs.entries()).map(([id, job]) => {
+export function getScheduledJobs(): ScheduledJob[] {
+  return Array.from(scheduledJobs.entries()).map(([id]) => {
     const prompt = db.getPrompt(id);
     return {
       id,
       name: prompt?.name || 'Unknown',
       schedule: prompt?.schedule || 'Unknown',
-      enabled: prompt?.enabled || false,
+      enabled: !!prompt?.enabled,
     };
   });
 }
-
-module.exports = {
-  initScheduler,
-  schedulePrompt,
-  unschedulePrompt,
-  reschedulePrompt,
-  rescheduleAll,
-  getScheduledJobs,
-};

@@ -1,13 +1,16 @@
-const fs = require('fs');
-const path = require('path');
-const nodemailer = require('nodemailer');
-const https = require('https');
-const http = require('http');
-const db = require('./db');
+import fs from 'fs';
+import path from 'path';
+import nodemailer from 'nodemailer';
+import https from 'https';
+import http from 'http';
+import { getConfig } from './db';
+import type { Prompt, AppConfig } from './db';
 
-let mailer = null;
+type PromptWithConfig = Prompt & { output_config: Record<string, unknown> };
 
-function initializeMailer(config) {
+let mailer: ReturnType<typeof nodemailer.createTransport> | null = null;
+
+export function initializeMailer(config: AppConfig): ReturnType<typeof nodemailer.createTransport> | null {
   if (!config.smtp || !config.smtp.user || !config.smtp.password) {
     return null;
   }
@@ -19,8 +22,8 @@ function initializeMailer(config) {
       secure: config.smtp.secure,
       auth: {
         user: config.smtp.user,
-        pass: config.smtp.password
-      }
+        pass: config.smtp.password,
+      },
     });
   } catch (e) {
     console.error('Failed to initialize mailer:', e);
@@ -30,13 +33,13 @@ function initializeMailer(config) {
   return mailer;
 }
 
-function sendEmail(prompt, output, config) {
+export function sendEmail(prompt: PromptWithConfig, output: string, config: AppConfig): Promise<unknown> {
   if (!mailer) {
     throw new Error('Email not configured. Please configure SMTP settings.');
   }
 
-  const emailConfig = prompt.output_config;
-if (!emailConfig || !emailConfig.to) {
+  const emailConfig = prompt.output_config as { to?: string; subject?: string };
+  if (!emailConfig || !emailConfig.to) {
     throw new Error('Email recipient not specified in output config');
   }
 
@@ -45,7 +48,7 @@ if (!emailConfig || !emailConfig.to) {
 
   const htmlOutput = output
     .split('\n')
-    .map(line => {
+    .map((line) => {
       const escaped = line
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -89,12 +92,12 @@ if (!emailConfig || !emailConfig.to) {
   `;
 
   return new Promise((resolve, reject) => {
-    mailer.sendMail(
+    mailer!.sendMail(
       {
         from: config.defaultFrom,
         to: emailConfig.to,
         subject,
-        html
+        html,
       },
       (err, info) => {
         if (err) {
@@ -109,18 +112,16 @@ if (!emailConfig || !emailConfig.to) {
   });
 }
 
-function appendToFile(prompt, output) {
-  const filePath = prompt.output_config?.path;
+export function appendToFile(prompt: PromptWithConfig, output: string): void {
+  const filePath = (prompt.output_config as { path?: string })?.path;
   if (!filePath) {
     throw new Error('File path not specified in output config');
   }
 
-  // Resolve relative paths to current working directory
   const resolvedPath = path.isAbsolute(filePath)
     ? filePath
     : path.join(process.cwd(), filePath);
 
-  // Ensure directory exists
   const dir = path.dirname(resolvedPath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -133,21 +134,23 @@ function appendToFile(prompt, output) {
   console.log(`Output appended to: ${resolvedPath}`);
 }
 
-function sendToWebhook(prompt, output, status, error) {
-  const webhookUrl = prompt.output_config?.url;
+export function sendToWebhook(
+  prompt: PromptWithConfig,
+  output: string,
+  status: string,
+  error: string | null
+): Promise<{ statusCode: number; body: string }> {
+  const webhookUrl = (prompt.output_config as { url?: string })?.url;
   if (!webhookUrl) {
     throw new Error('Webhook URL not specified in output config');
   }
 
   const payload = {
     timestamp: new Date().toISOString(),
-    prompt: {
-      id: prompt.id,
-      name: prompt.name
-    },
+    prompt: { id: prompt.id, name: prompt.name },
     status,
     output,
-    error
+    error,
   };
 
   return new Promise((resolve, reject) => {
@@ -159,17 +162,17 @@ function sendToWebhook(prompt, output, status, error) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(JSON.stringify(payload))
-      }
+        'Content-Length': Buffer.byteLength(JSON.stringify(payload)),
+      },
     };
 
     const req = client.request(url, options, (res) => {
       let data = '';
-      res.on('data', (chunk) => {
+      res.on('data', (chunk: Buffer) => {
         data += chunk;
       });
       res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
+        if (res.statusCode !== undefined && res.statusCode >= 200 && res.statusCode < 300) {
           console.log(`Webhook sent to: ${webhookUrl}, status: ${res.statusCode}`);
           resolve({ statusCode: res.statusCode, body: data });
         } else {
@@ -179,7 +182,7 @@ function sendToWebhook(prompt, output, status, error) {
       });
     });
 
-    req.on('error', (err) => {
+    req.on('error', (err: Error) => {
       console.error('Webhook error:', err);
       reject(err);
     });
@@ -189,9 +192,14 @@ function sendToWebhook(prompt, output, status, error) {
   });
 }
 
-async function routeOutput(prompt, output, status, error) {
+export async function routeOutput(
+  prompt: PromptWithConfig,
+  output: string,
+  status: string,
+  error: string | null
+): Promise<void> {
   if (!prompt.enabled) {
-    return; // Don't route if prompt is disabled
+    return;
   }
 
   const outputType = prompt.output_type;
@@ -199,23 +207,13 @@ async function routeOutput(prompt, output, status, error) {
 
   try {
     if (outputType === 'email') {
-      await sendEmail(prompt, output, db.getConfig());
+      await sendEmail(prompt, output, getConfig());
     } else if (outputType === 'file') {
       appendToFile(prompt, output);
     } else if (outputType === 'webhook') {
       await sendToWebhook(prompt, output, status, error);
     }
-    // 'log' type just stores in database, which is already done
   } catch (err) {
     console.error(`Error routing output (${outputType}):`, err);
-    // Don't re-throw; we want to log the error but not fail the run
   }
 }
-
-module.exports = {
-  initializeMailer,
-  sendEmail,
-  appendToFile,
-  sendToWebhook,
-  routeOutput
-};

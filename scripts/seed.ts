@@ -5,9 +5,17 @@
  * Run: npm run seed
  */
 
-const db = require('../server/db');
+import * as db from '../server/db';
 
-const examplePrompts = [
+interface SeedPrompt {
+  name: string;
+  prompt_text: string;
+  schedule: string;
+  output_type: string;
+  output_config: Record<string, unknown>;
+}
+
+const examplePrompts: SeedPrompt[] = [
   {
     name: 'Daily News Digest',
     prompt_text: `Generate a brief summary of the top 5 technology news stories from today. For each story, provide:
@@ -18,7 +26,7 @@ const examplePrompts = [
 Keep it concise and scannable.`,
     schedule: '0 8 * * *',
     output_type: 'log',
-    output_config: {}
+    output_config: {},
   },
   {
     name: 'Weekly Standup Template',
@@ -31,7 +39,7 @@ Keep it concise and scannable.`,
 Format as markdown.`,
     schedule: '0 9 * * 1',
     output_type: 'log',
-    output_config: {}
+    output_config: {},
   },
   {
     name: 'Code Review Checklist',
@@ -46,7 +54,7 @@ Format as markdown.`,
 Format as a markdown checklist that developers can use.`,
     schedule: '0 10 * * *',
     output_type: 'log',
-    output_config: {}
+    output_config: {},
   },
   {
     name: 'Writing Tips of the Day',
@@ -58,7 +66,7 @@ Format as a markdown checklist that developers can use.`,
 Make it practical and actionable.`,
     schedule: '0 9 * * *',
     output_type: 'log',
-    output_config: {}
+    output_config: {},
   },
   {
     name: 'Debugging Guide',
@@ -71,22 +79,20 @@ Make it practical and actionable.`,
 Be practical with real examples.`,
     schedule: '0 14 * * *',
     output_type: 'log',
-    output_config: {}
-  }
+    output_config: {},
+  },
 ];
 
 console.log('🌱 Seeding database with example prompts...\n');
 
 try {
-  // Check if prompts already exist
   const existing = db.getAllPrompts();
   if (existing.length > 0) {
     console.log('ℹ️  Database already has prompts. Skipping seed.');
     process.exit(0);
   }
 
-  // Create each example prompt
-  examplePrompts.forEach(prompt => {
+  examplePrompts.forEach((prompt) => {
     const created = db.createPrompt(
       prompt.name,
       prompt.prompt_text,
@@ -103,6 +109,6 @@ try {
   console.log('\nThen visit: http://localhost:3000\n');
   process.exit(0);
 } catch (error) {
-  console.error('❌ Error seeding database:', error.message);
+  console.error('❌ Error seeding database:', (error as Error).message);
   process.exit(1);
 }

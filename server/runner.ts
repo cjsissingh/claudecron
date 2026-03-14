@@ -1,37 +1,38 @@
-const { spawn } = require('child_process');
-const db = require('./db');
-const router = require('./router');
+import { spawn } from 'child_process';
+import * as db from './db';
+import { routeOutput } from './router';
+import type { Prompt } from './db';
 
-// Map to track active runs for SSE streaming
-const activeRuns = new Map();
-
-// Event listeners for each run
-function getRun(runId) {
-  if (!activeRuns.has(runId)) {
-    activeRuns.set(runId, {
-      listeners: [],
-      buffer: ''
-    });
-  }
-  return activeRuns.get(runId);
+interface RunState {
+  listeners: Array<(chunk: string) => void>;
+  buffer: string;
 }
 
-function onRunOutput(runId, callback) {
-  const run = getRun(runId);
+// Map to track active runs for SSE streaming
+const activeRuns = new Map<number, RunState>();
+
+function getRunState(runId: number): RunState {
+  if (!activeRuns.has(runId)) {
+    activeRuns.set(runId, { listeners: [], buffer: '' });
+  }
+  return activeRuns.get(runId)!;
+}
+
+export function onRunOutput(runId: number, callback: (chunk: string) => void): () => void {
+  const run = getRunState(runId);
   run.listeners.push(callback);
-  // Send buffered output immediately
   if (run.buffer) {
     callback(run.buffer);
   }
   return () => {
-    run.listeners = run.listeners.filter(l => l !== callback);
+    run.listeners = run.listeners.filter((l) => l !== callback);
   };
 }
 
-function emitOutput(runId, chunk) {
-  const run = getRun(runId);
+function emitOutput(runId: number, chunk: string): void {
+  const run = getRunState(runId);
   run.buffer += chunk;
-  run.listeners.forEach(listener => {
+  run.listeners.forEach((listener) => {
     try {
       listener(chunk);
     } catch (e) {
@@ -40,19 +41,21 @@ function emitOutput(runId, chunk) {
   });
 }
 
-function cleanupRun(runId) {
+export function cleanupRun(runId: number): void {
   activeRuns.delete(runId);
 }
 
-async function runPrompt(promptId) {
+export function getRun(runId: number): RunState | undefined {
+  return activeRuns.get(runId);
+}
+
+export async function runPrompt(promptId: number): Promise<{ runId: number; output: string; status: string }> {
   const prompt = db.getPrompt(promptId);
   if (!prompt) {
     throw new Error(`Prompt ${promptId} not found`);
   }
 
-  // Create a run record
   const runId = db.createRun(promptId);
-  const run = db.getRun(runId);
 
   console.log(`[Run ${runId}] Starting prompt: ${prompt.name}`);
 
@@ -61,7 +64,6 @@ async function runPrompt(promptId) {
     const claudePath = config.claudePath || 'claude';
 
     return new Promise((resolve, reject) => {
-      // Spawn the Claude CLI process
       const child = spawn(claudePath, ['-p', prompt.prompt_text, '--dangerously-skip-permissions'], {
         stdio: ['ignore', 'pipe', 'pipe'],
       });
@@ -69,37 +71,37 @@ async function runPrompt(promptId) {
       let output = '';
       let errorOutput = '';
 
-      child.stdout.on('data', (data) => {
+      child.stdout!.on('data', (data: Buffer) => {
         const chunk = data.toString();
         output += chunk;
         db.appendRunOutput(runId, chunk);
         emitOutput(runId, chunk);
       });
 
-      child.stderr.on('data', (data) => {
+      child.stderr!.on('data', (data: Buffer) => {
         const chunk = data.toString();
         errorOutput += chunk;
         db.appendRunOutput(runId, chunk);
         emitOutput(runId, chunk);
       });
 
-      child.on('close', (code) => {
+      child.on('close', (code: number | null) => {
         const status = code === 0 ? 'success' : 'error';
-        const errorMsg = code === 0 ? null : `Process exited with code ${code}${errorOutput ? ': ' + errorOutput : ''}`;
+        const errorMsg =
+          code === 0
+            ? null
+            : `Process exited with code ${code}${errorOutput ? ': ' + errorOutput : ''}`;
 
         console.log(`[Run ${runId}] Completed with status: ${status}`);
 
-        // Update run record
         db.finishRun(runId, status, errorMsg);
 
-        // Route output
         try {
-          router.routeOutput(prompt, output, status, errorMsg);
+          routeOutput(prompt as Prompt & { output_config: Record<string, unknown> }, output, status, errorMsg);
         } catch (e) {
           console.error('Error routing output:', e);
         }
 
-        // Cleanup
         emitOutput(runId, '\n[DONE]');
         setTimeout(() => cleanupRun(runId), 5000);
 
@@ -110,7 +112,7 @@ async function runPrompt(promptId) {
         }
       });
 
-      child.on('error', (error) => {
+      child.on('error', (error: Error) => {
         console.error(`[Run ${runId}] Error spawning process:`, error);
         const errorMsg = error.message;
         db.finishRun(runId, 'error', errorMsg);
@@ -120,17 +122,11 @@ async function runPrompt(promptId) {
       });
     });
   } catch (error) {
-    console.error(`[Run ${runId}] Error:`, error);
-    db.finishRun(runId, 'error', error.message);
-    emitOutput(runId, `\nError: ${error.message}\n[DONE]`);
+    const err = error as Error;
+    console.error(`[Run ${runId}] Error:`, err);
+    db.finishRun(runId, 'error', err.message);
+    emitOutput(runId, `\nError: ${err.message}\n[DONE]`);
     setTimeout(() => cleanupRun(runId), 5000);
-    throw error;
+    throw err;
   }
 }
-
-module.exports = {
-  runPrompt,
-  onRunOutput,
-  cleanupRun,
-  getRun
-};

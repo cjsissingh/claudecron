@@ -1,16 +1,33 @@
-import { useState } from 'react'
-import { Card, CardContent } from './ui/card'
-import { Button } from './ui/button'
-import { Badge } from './ui/badge'
-import { Switch } from './ui/switch'
-import { Edit2, Trash2, Play, ChevronRight, Clock, AlertCircle } from 'lucide-react'
-import { cn } from '../lib/utils'
+import { useState } from 'react';
+import { Card, CardContent } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Switch } from './ui/switch';
+import { Edit2, Trash2, Play, Clock } from 'lucide-react';
+import { cn } from '../lib/utils';
+import type { Prompt } from '../App';
 
-export default function PromptList({ prompts, selectedPromptId, onSelect, onEdit, onDelete, onRefresh }) {
-  const [loadingId, setLoadingId] = useState(null)
+interface PromptListProps {
+  prompts: Prompt[];
+  selectedPromptId: number | null;
+  onSelect: (id: number | null) => void;
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
+  onRefresh: () => void;
+}
 
-  const handleToggle = async (prompt) => {
-    setLoadingId(prompt.id)
+export default function PromptList({
+  prompts,
+  selectedPromptId,
+  onSelect,
+  onEdit,
+  onDelete,
+  onRefresh,
+}: PromptListProps) {
+  const [loadingId, setLoadingId] = useState<number | null>(null);
+
+  const handleToggle = async (prompt: Prompt) => {
+    setLoadingId(prompt.id);
     try {
       await fetch(`/api/prompts/${prompt.id}`, {
         method: 'PUT',
@@ -23,23 +40,23 @@ export default function PromptList({ prompts, selectedPromptId, onSelect, onEdit
           output_config: prompt.outputConfig,
           enabled: !prompt.enabled,
         }),
-      })
-      onRefresh()
+      });
+      onRefresh();
     } finally {
-      setLoadingId(null)
+      setLoadingId(null);
     }
-  }
+  };
 
-  const handleRun = async (e, promptId) => {
-    e.stopPropagation()
-    setLoadingId(promptId)
+  const handleRun = async (e: React.MouseEvent, promptId: number) => {
+    e.stopPropagation();
+    setLoadingId(promptId);
     try {
-      await fetch(`/api/prompts/${promptId}/run`, { method: 'POST' })
-      onRefresh()
+      await fetch(`/api/prompts/${promptId}/run`, { method: 'POST' });
+      onRefresh();
     } finally {
-      setLoadingId(null)
+      setLoadingId(null);
     }
-  }
+  };
 
   if (prompts.length === 0) {
     return (
@@ -48,9 +65,11 @@ export default function PromptList({ prompts, selectedPromptId, onSelect, onEdit
           <Clock className="w-6 h-6 text-muted-foreground" />
         </div>
         <h3 className="font-medium text-sm mb-1">No prompts yet</h3>
-        <p className="text-sm text-muted-foreground">Create your first scheduled prompt to get started.</p>
+        <p className="text-sm text-muted-foreground">
+          Create your first scheduled prompt to get started.
+        </p>
       </div>
-    )
+    );
   }
 
   return (
@@ -59,8 +78,8 @@ export default function PromptList({ prompts, selectedPromptId, onSelect, onEdit
         <Card
           key={prompt.id}
           className={cn(
-            "cursor-pointer transition-colors hover:bg-accent/50",
-            selectedPromptId === prompt.id && "ring-1 ring-primary bg-accent/30"
+            'cursor-pointer transition-colors hover:bg-accent/50',
+            selectedPromptId === prompt.id && 'ring-1 ring-primary bg-accent/30'
           )}
           onClick={() => onSelect(selectedPromptId === prompt.id ? null : prompt.id)}
         >
@@ -78,10 +97,10 @@ export default function PromptList({ prompts, selectedPromptId, onSelect, onEdit
                     <Clock className="w-3 h-3" />
                     {prompt.schedule}
                   </span>
-                  <span className="capitalize">{prompt.outputType || prompt.output_type}</span>
+                  <span className="capitalize">{prompt.outputType}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 <Switch
                   checked={!!prompt.enabled}
                   onCheckedChange={() => handleToggle(prompt)}
@@ -101,7 +120,10 @@ export default function PromptList({ prompts, selectedPromptId, onSelect, onEdit
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  onClick={(e) => { e.stopPropagation(); onEdit(prompt.id); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(prompt.id);
+                  }}
                   title="Edit"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
@@ -110,7 +132,10 @@ export default function PromptList({ prompts, selectedPromptId, onSelect, onEdit
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 hover:text-destructive hover:bg-destructive/10"
-                  onClick={(e) => { e.stopPropagation(); onDelete(prompt.id); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(prompt.id);
+                  }}
                   title="Delete"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -121,5 +146,5 @@ export default function PromptList({ prompts, selectedPromptId, onSelect, onEdit
         </Card>
       ))}
     </div>
-  )
+  );
 }

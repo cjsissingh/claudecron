@@ -32,8 +32,8 @@ Then open http://localhost:3000 in your browser.
 ### Manual Setup
 
 ```bash
-npm install
-cd client && npm install && npm run build && cd ..
+npm run install-all
+npm run build
 npm start
 ```
 
@@ -150,30 +150,40 @@ Be technical but concise.
 
 ```
 claudecron/
-├── package.json                # Root dependencies
-├── ecosystem.config.js         # pm2 configuration
-├── install.sh                  # Installation script
+├── package.json                # Root dependencies and scripts
+├── tsconfig.json               # TypeScript config (server)
+├── eslint.config.js            # ESLint flat config
+├── .prettierrc                 # Prettier config
 ├── README.md                   # This file
 ├── server/
-│   ├── index.js                # Express server and routes
-│   ├── db.js                   # SQLite database and schema
-│   ├── scheduler.js            # node-cron job management
-│   ├── runner.js               # Prompt execution engine
-│   └── router.js               # Output routing (email, file, webhook)
+│   ├── index.ts                # Express server and routes
+│   ├── db.ts                   # SQLite database, schema, and types
+│   ├── scheduler.ts            # node-cron job management
+│   ├── runner.ts               # Prompt execution engine
+│   ├── router.ts               # Output routing (email, file, webhook)
+│   └── types/
+│       └── node-cron.d.ts      # Type declarations for node-cron
+├── scripts/
+│   └── seed.ts                 # Database seed script
 ├── client/
 │   ├── index.html              # HTML entry point
-│   ├── vite.config.js          # Vite build config
+│   ├── vite.config.ts          # Vite build config
+│   ├── tsconfig.json           # TypeScript config (client)
+│   ├── tailwind.config.js      # Tailwind CSS config
 │   ├── package.json            # React dependencies
 │   └── src/
-│       ├── main.jsx            # React entry point
-│       ├── App.jsx             # Main app component
+│       ├── main.tsx            # React entry point
+│       ├── App.tsx             # Main app component and shared types
+│       ├── lib/
+│       │   └── utils.ts        # cn() utility
 │       └── components/
-│           ├── PromptList.jsx      # Prompt list and management
-│           ├── PromptEditor.jsx    # Create/edit form
-│           ├── RunHistory.jsx      # Past runs view
-│           └── TestRun.jsx         # Test run with streaming output
-└── config/
-    └── config.json             # User configuration
+│           ├── PromptList.tsx      # Prompt list and management
+│           ├── PromptEditor.tsx    # Create/edit form with test run
+│           ├── RunHistory.tsx      # Past runs view
+│           ├── Settings.tsx        # SMTP and Claude CLI config
+│           └── ui/                 # shadcn/ui primitives
+└── data/
+    └── claudecron.db           # SQLite database (auto-created)
 ```
 
 ## API Documentation
@@ -202,12 +212,14 @@ claudecron/
 ### Running in Development Mode
 
 ```bash
-# Terminal 1: Start the backend server (with auto-reload)
+# Install all dependencies
+npm run install-all
+
+# Terminal 1: Start the backend (ts-node with auto-reload)
 npm run dev
 
 # Terminal 2: Start the Vite dev server
-cd client
-npm run dev
+cd client && npm run dev
 ```
 
 The frontend will be at http://localhost:5173 and proxies API calls to http://localhost:3000.
@@ -215,8 +227,24 @@ The frontend will be at http://localhost:5173 and proxies API calls to http://lo
 ### Building for Production
 
 ```bash
-npm run build
-npm start
+npm run build    # compiles server TS + builds React client
+npm start        # runs compiled dist/server/index.js
+```
+
+### Linting and Type Checking
+
+```bash
+npm run typecheck      # tsc --noEmit on server and client
+npm run lint           # ESLint on server/
+npm run lint:fix       # ESLint with auto-fix
+npm run format         # Prettier on all files
+npm run format:check   # Prettier check (CI-friendly)
+```
+
+### Seeding the Database
+
+```bash
+npm run seed    # populates example prompts
 ```
 
 ## Database
@@ -295,7 +323,7 @@ After=network.target
 Type=simple
 User=your-user
 WorkingDirectory=/path/to/claudecron
-ExecStart=/usr/bin/node server/index.js
+ExecStart=/usr/bin/node dist/server/index.js
 Restart=on-failure
 RestartSec=10
 Environment="NODE_ENV=production"
@@ -315,7 +343,7 @@ sudo systemctl start claudecron
 
 - claudecron runs locally by default; do not expose to the internet without authentication
 - The Claude CLI flag `--dangerously-skip-permissions` is used to allow prompts to be run without user confirmation
-- Keep your config.json secure; it contains email credentials
+- SMTP credentials are stored in the local SQLite database (`data/claudecron.db`) — keep this file secure
 - Consider running behind a reverse proxy (nginx, Caddy) with authentication
 
 ## License
