@@ -36,6 +36,7 @@ function sendEmail(prompt, output, config) {
   }
 
   const emailConfig = prompt.output_config;
+  console.log('[sendEmail] output_config raw:', JSON.stringify(prompt.output_config), 'type:', typeof prompt.output_config);
   if (!emailConfig || !emailConfig.to) {
     throw new Error('Email recipient not specified in output config');
   }
