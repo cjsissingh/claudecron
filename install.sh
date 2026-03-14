@@ -7,9 +7,13 @@ npm install
 echo "📦 Installing client dependencies..."
 cd client
 npm install
-echo "🏗️  Building React app..."
-npm run build
 cd ..
+
+echo "🏗️  Building server..."
+npm run build:server
+
+echo "🏗️  Building client..."
+npm run build:client
 
 echo "🚀 Setting up pm2..."
 npm install -g pm2 || true

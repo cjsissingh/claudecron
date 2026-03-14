@@ -10,9 +10,13 @@ npm install
 echo "📦 Installing client dependencies..."
 cd client
 npm install
-echo "🏗️  Building React app..."
-npm run build
 cd ..
+
+echo "🏗️  Building server..."
+npm run build:server
+
+echo "🏗️  Building client..."
+npm run build:client
 
 echo "🔄 Restarting claudecron..."
 pm2 restart claudecron

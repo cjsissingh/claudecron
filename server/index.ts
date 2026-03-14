@@ -13,7 +13,7 @@ const PORT = process.env['PORT'] || 3000;
 app.use(cors());
 app.use(express.json());
 
-const clientDist = path.join(__dirname, '../client/dist');
+const clientDist = path.join(__dirname, '../../client/dist');
 app.use(express.static(clientDist));
 
 const config = db.getConfig();
