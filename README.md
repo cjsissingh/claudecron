@@ -15,7 +15,7 @@ A local-first Claude prompt scheduler with a beautiful web UI. Create, schedule,
 ## Quick Start
 
 ### Prerequisites
-- Node.js 16+
+- Node.js 18+
 - Claude CLI installed and available in PATH (or configure the path in settings)
 - (Optional) Email provider credentials if you want to route output to email
 
@@ -282,17 +282,6 @@ If you get "database is locked" errors:
 - Memory usage is minimal; typical installation uses <100MB
 
 ## Deployment
-
-### Docker
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY . .
-RUN bash install.sh
-EXPOSE 3000
-CMD ["npm", "start"]
-```
 
 ### systemd Service
 

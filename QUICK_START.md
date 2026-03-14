@@ -133,7 +133,7 @@ This adds 5 example prompts to play with.
 ## Next Steps
 
 - Read [README.md](./README.md) for full documentation
-- Check [DEVELOPMENT.md](./DEVELOPMENT.md) for development guide
+- Check [DEVELOPMENT.md](./DEVELOPMENT.md) for the development guide
 - Explore cron expression syntax at [crontab.guru](https://crontab.guru)
 
 ## System Auto-Start (Optional)
@@ -155,7 +155,7 @@ pm2 save
 
 - Check the logs: `pm2 logs claudecron`
 - Review [README.md](./README.md) for more details
-- Check [DEVELOPMENT.md](./DEVELOPMENT.md) if you want to modify code
+- Check [DEVELOPMENT.md](./DEVELOPMENT.md) if you want to modify the code
 
 ---
 

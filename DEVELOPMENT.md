@@ -365,9 +365,6 @@ Environment="PORT=3000"
 WantedBy=multi-user.target
 ```
 
-### Docker
-See README.md for Docker setup.
-
 ### Cloud Platforms
 
 **Heroku:** Add Procfile
