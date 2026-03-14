@@ -110,7 +110,7 @@ claudecron/
 | Build | Vite 5 |
 | CSS | Tailwind CSS (CDN) |
 | Process Mgmt | pm2 |
-| Node | 16+ |
+| Node | 18+ |
 
 ## API Routes
 
