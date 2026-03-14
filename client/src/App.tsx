@@ -5,8 +5,9 @@ import RunHistory from './components/RunHistory';
 import Settings from './components/Settings';
 import { Button } from './components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './components/ui/sheet';
-import { Clock, Settings as SettingsIcon, Plus, Menu } from 'lucide-react';
+import { Clock, Settings as SettingsIcon, Plus, Menu, Sun, Moon } from 'lucide-react';
 import { cn } from './lib/utils';
+import { useTheme } from './lib/theme';
 
 export interface Prompt {
   id: number;
@@ -67,9 +68,17 @@ interface SidebarContentProps {
 }
 
 function SidebarContent({ page, prompts, onNavigate, onNewPrompt, onClose }: SidebarContentProps) {
+  const { theme, setTheme } = useTheme();
+
   const handleNavigate = (p: Page) => {
     onNavigate(p);
     onClose?.();
+  };
+
+  const toggleTheme = () => {
+    if (theme === 'dark') setTheme('light');
+    else if (theme === 'light') setTheme('system');
+    else setTheme('dark');
   };
 
   return (
@@ -143,6 +152,26 @@ function SidebarContent({ page, prompts, onNavigate, onNewPrompt, onClose }: Sid
           </Button>
         </div>
       )}
+
+      {/* Theme toggle */}
+      <div className="p-3 border-t">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-3 text-muted-foreground"
+          onClick={toggleTheme}
+          title={`Theme: ${theme}`}
+        >
+          {theme === 'dark' ? (
+            <Moon className="w-4 h-4 shrink-0" />
+          ) : theme === 'light' ? (
+            <Sun className="w-4 h-4 shrink-0" />
+          ) : (
+            <Sun className="w-4 h-4 shrink-0 opacity-50" />
+          )}
+          <span className="capitalize">{theme} mode</span>
+        </Button>
+      </div>
     </div>
   );
 }
