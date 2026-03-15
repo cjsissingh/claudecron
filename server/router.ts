@@ -3,6 +3,7 @@ import path from 'path';
 import nodemailer from 'nodemailer';
 import https from 'https';
 import http from 'http';
+import { marked } from 'marked';
 import { getConfig } from './db';
 import type { Prompt, AppConfig } from './db';
 
@@ -52,17 +53,7 @@ export function sendEmail(
   const now = new Date().toLocaleString();
   const subject = `[claudecron] ${prompt.name} - ${now}`;
 
-  const htmlOutput = output
-    .split('\n')
-    .map((line) => {
-      const escaped = line
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-      return `<p>${escaped}</p>`;
-    })
-    .join('');
+  const htmlOutput = marked(output);
 
   const html = `
     <!DOCTYPE html>
@@ -76,7 +67,15 @@ export function sendEmail(
           .header h2 { margin: 0 0 5px 0; color: #000; }
           .header p { margin: 0; color: #666; font-size: 12px; }
           .output { background-color: #fafafa; padding: 15px; border-radius: 5px; border-left: 4px solid #007bff; overflow-x: auto; }
-          .output p { margin: 5px 0; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+          .output p { margin: 5px 0; line-height: 1.5; word-break: break-word; }
+          .output h1, .output h2, .output h3, .output h4 { margin: 12px 0 6px; }
+          .output ul, .output ol { margin: 6px 0; padding-left: 24px; }
+          .output li { margin: 2px 0; line-height: 1.5; }
+          .output code { background: #eee; padding: 1px 4px; border-radius: 3px; font-family: monospace; font-size: 0.9em; }
+          .output pre { background: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; }
+          .output pre code { background: none; padding: 0; }
+          .output blockquote { border-left: 3px solid #ccc; margin: 8px 0; padding-left: 12px; color: #666; }
+          .output a { color: #007bff; }
           .footer { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; font-size: 11px; color: #999; }
         </style>
       </head>
