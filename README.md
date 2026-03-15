@@ -16,7 +16,7 @@ A local-first Claude prompt scheduler with a beautiful web UI. Create, schedule,
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 24+
 - Claude CLI installed and available in PATH (or configure the path in settings)
 - (Optional) Email provider credentials if you want to route output to email
 

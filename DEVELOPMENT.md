@@ -4,7 +4,7 @@
 
 ### Prerequisites
 
-- Node.js 18+ (check with `node --version`)
+- Node.js 24+ (check with `node --version`)
 - npm (included with Node.js)
 - Claude CLI installed and in PATH
 

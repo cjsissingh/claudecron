@@ -6,13 +6,13 @@ Get claudecron running in 5 minutes.
 
 Make sure you have:
 
-- **Node.js 18+** — Download from [nodejs.org](https://nodejs.org)
+- **Node.js 24+** — Download from [nodejs.org](https://nodejs.org)
 - **Claude CLI** — Install from [Anthropic docs](https://docs.anthropic.com/claude/reference/claude-cli-quickstart)
 
 Verify:
 
 ```bash
-node --version      # Should be v18 or higher
+node --version      # Should be v24 or higher
 npm --version       # Should be included with Node
 which claude        # Should show path to Claude CLI
 ```
