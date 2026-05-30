@@ -1,11 +1,13 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import cors from 'cors';
-import cron from 'node-cron';
 import * as db from './db';
+import type { OutputConfig } from './db';
 import * as scheduler from './scheduler';
 import { runPrompt, onRunOutput } from './runner';
 import { initializeMailer } from './router';
+import { validateCronExpression } from './validation';
+import { asyncHandler, errorMiddleware } from './middleware';
 
 const app = express();
 const PORT = process.env['PORT'] || 3000;
@@ -19,39 +21,34 @@ app.use(express.static(clientDist));
 const config = db.getConfig();
 initializeMailer(config);
 
+const staleCount = db.markStaleRunsFailed();
+if (staleCount > 0) {
+  console.log(`[Startup] Marked ${staleCount} stale run(s) as failed`);
+}
+
 // ============ API ROUTES ============
 
-app.get('/api/prompts', (req: Request, res: Response) => {
-  try {
+app.get(
+  '/api/prompts',
+  asyncHandler(async (_req: Request, res: Response) => {
     const prompts = db.getAllPrompts();
-    prompts.forEach((p) => {
-      if (p.output_config && typeof p.output_config === 'string') {
-        try {
-          p.output_config = JSON.parse(p.output_config) as Record<string, unknown>;
-        } catch {
-          p.output_config = {};
-        }
-      }
-    });
     res.json(prompts);
-  } catch (error) {
-    console.error('Error fetching prompts:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
+  })
+);
 
-app.post('/api/prompts', (req: Request, res: Response) => {
-  try {
+app.post(
+  '/api/prompts',
+  asyncHandler(async (req: Request, res: Response) => {
     const { name, prompt_text, schedule, output_type, output_config, enabled } = req.body as {
       name: string;
       prompt_text: string;
       schedule: string;
       output_type: string;
-      output_config: Record<string, unknown>;
+      output_config: OutputConfig | null;
       enabled?: boolean;
     };
 
-    if (!cron.validate(schedule)) {
+    if (!validateCronExpression(schedule)) {
       return res.status(400).json({ error: 'Invalid cron expression' });
     }
 
@@ -62,14 +59,12 @@ app.post('/api/prompts', (req: Request, res: Response) => {
     }
 
     res.json(newPrompt);
-  } catch (error) {
-    console.error('Error creating prompt:', error);
-    res.status(400).json({ error: (error as Error).message });
-  }
-});
+  })
+);
 
-app.post('/api/prompts/test', async (req: Request, res: Response) => {
-  try {
+app.post(
+  '/api/prompts/test',
+  asyncHandler(async (req: Request, res: Response) => {
     const { promptText } = req.body as { promptText?: string };
     if (!promptText) {
       return res.status(400).json({ error: 'promptText is required' });
@@ -83,45 +78,34 @@ app.post('/api/prompts/test', async (req: Request, res: Response) => {
 
     const runs = db.getRunHistory(tempPrompt.id, 1);
     res.json({ runId: runs[0]?.id });
-  } catch (error) {
-    console.error('Error running test prompt:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
+  })
+);
 
-app.get('/api/prompts/:id', (req: Request, res: Response) => {
-  try {
+app.get(
+  '/api/prompts/:id',
+  asyncHandler(async (req: Request, res: Response) => {
     const prompt = db.getPrompt(parseInt(req.params['id']!));
     if (!prompt) {
       return res.status(404).json({ error: 'Prompt not found' });
     }
-    if (prompt.output_config && typeof prompt.output_config === 'string') {
-      try {
-        prompt.output_config = JSON.parse(prompt.output_config) as Record<string, unknown>;
-      } catch {
-        prompt.output_config = {};
-      }
-    }
     res.json(prompt);
-  } catch (error) {
-    console.error('Error fetching prompt:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
+  })
+);
 
-app.put('/api/prompts/:id', (req: Request, res: Response) => {
-  try {
+app.put(
+  '/api/prompts/:id',
+  asyncHandler(async (req: Request, res: Response) => {
     const { name, prompt_text, schedule, output_type, output_config, enabled } = req.body as {
       name: string;
       prompt_text: string;
       schedule: string;
       output_type: string;
-      output_config: Record<string, unknown>;
+      output_config: OutputConfig | null;
       enabled: boolean;
     };
     const id = parseInt(req.params['id']!);
 
-    if (!cron.validate(schedule)) {
+    if (!validateCronExpression(schedule)) {
       return res.status(400).json({ error: 'Invalid cron expression' });
     }
 
@@ -138,26 +122,22 @@ app.put('/api/prompts/:id', (req: Request, res: Response) => {
     scheduler.reschedulePrompt(id);
 
     res.json(updatedPrompt);
-  } catch (error) {
-    console.error('Error updating prompt:', error);
-    res.status(400).json({ error: (error as Error).message });
-  }
-});
+  })
+);
 
-app.delete('/api/prompts/:id', (req: Request, res: Response) => {
-  try {
+app.delete(
+  '/api/prompts/:id',
+  asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params['id']!);
     scheduler.unschedulePrompt(id);
     db.deletePrompt(id);
     res.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting prompt:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
+  })
+);
 
-app.post('/api/prompts/:id/run', (req: Request, res: Response) => {
-  try {
+app.post(
+  '/api/prompts/:id/run',
+  asyncHandler(async (req: Request, res: Response) => {
     const promptId = parseInt(req.params['id']!);
     const prompt = db.getPrompt(promptId);
     if (!prompt) {
@@ -170,23 +150,18 @@ app.post('/api/prompts/:id/run', (req: Request, res: Response) => {
 
     const runs = db.getRunHistory(promptId, 1);
     res.json(runs[0] || { status: 'running' });
-  } catch (error) {
-    console.error('Error running prompt:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
+  })
+);
 
-app.get('/api/prompts/:id/runs', (req: Request, res: Response) => {
-  try {
+app.get(
+  '/api/prompts/:id/runs',
+  asyncHandler(async (req: Request, res: Response) => {
     const promptId = parseInt(req.params['id']!);
     const limit = parseInt((req.query['limit'] as string) || '50');
     const runs = db.getRunHistory(promptId, limit);
     res.json(runs);
-  } catch (error) {
-    console.error('Error fetching run history:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
+  })
+);
 
 app.get('/api/runs/:id/stream', (req: Request, res: Response) => {
   const runId = parseInt(req.params['id']!);
@@ -214,18 +189,17 @@ app.get('/api/runs/:id/stream', (req: Request, res: Response) => {
   });
 });
 
-app.get('/api/config', (req: Request, res: Response) => {
-  try {
+app.get(
+  '/api/config',
+  asyncHandler(async (_req: Request, res: Response) => {
     const cfg = db.getConfig();
     res.json(cfg);
-  } catch (error) {
-    console.error('Error fetching config:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
+  })
+);
 
-app.put('/api/config', (req: Request, res: Response) => {
-  try {
+app.put(
+  '/api/config',
+  asyncHandler(async (req: Request, res: Response) => {
     const { claudePath, smtp, defaultFrom } = req.body as db.AppConfig;
 
     db.updateConfig({ claudePath, smtp, defaultFrom });
@@ -234,11 +208,8 @@ app.put('/api/config', (req: Request, res: Response) => {
     initializeMailer(newConfig);
 
     res.json(newConfig);
-  } catch (error) {
-    console.error('Error updating config:', error);
-    res.status(400).json({ error: (error as Error).message });
-  }
-});
+  })
+);
 
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -252,6 +223,8 @@ app.get('*', (_req: Request, res: Response) => {
     }
   });
 });
+
+app.use(errorMiddleware);
 
 // ============ STARTUP ============
 

@@ -2,13 +2,19 @@ import Database, { type Database as DatabaseType } from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
+export type OutputConfig =
+  | { type: 'email'; to: string; subject?: string }
+  | { type: 'file'; path: string }
+  | { type: 'webhook'; url: string }
+  | { type: 'log' };
+
 export interface Prompt {
   id: number;
   name: string;
   prompt_text: string;
   schedule: string;
   output_type: string;
-  output_config: Record<string, unknown> | string | null;
+  output_config: OutputConfig | null;
   enabled: number | boolean;
   created_at: string;
   updated_at: string;
@@ -108,16 +114,30 @@ initDatabase();
 
 // Database operations
 export function getAllPrompts(): Prompt[] {
-  return db.prepare('SELECT * FROM prompts ORDER BY created_at DESC').all() as Prompt[];
+  const rows = db.prepare('SELECT * FROM prompts ORDER BY created_at DESC').all() as (Omit<
+    Prompt,
+    'output_config'
+  > & { output_config: string | null })[];
+  return rows.map((row) => {
+    let output_config: OutputConfig | null = null;
+    if (row.output_config) {
+      try {
+        output_config = JSON.parse(row.output_config) as OutputConfig;
+      } catch {
+        output_config = null;
+      }
+    }
+    return { ...row, output_config };
+  });
 }
 
 export function getPrompt(id: number): Prompt | undefined {
   const prompt = db.prepare('SELECT * FROM prompts WHERE id = ?').get(id) as Prompt | undefined;
   if (prompt && prompt.output_config && typeof prompt.output_config === 'string') {
     try {
-      prompt.output_config = JSON.parse(prompt.output_config) as Record<string, unknown>;
+      prompt.output_config = JSON.parse(prompt.output_config) as OutputConfig;
     } catch {
-      prompt.output_config = {};
+      prompt.output_config = null;
     }
   }
   return prompt;
@@ -128,7 +148,7 @@ export function createPrompt(
   promptText: string,
   schedule: string,
   outputType: string,
-  outputConfig: Record<string, unknown> | string | null
+  outputConfig: OutputConfig | Record<string, unknown> | string | null
 ): Prompt {
   const configStr =
     typeof outputConfig === 'string' ? outputConfig : JSON.stringify(outputConfig || {});
@@ -146,7 +166,7 @@ export function updatePrompt(
   promptText: string,
   schedule: string,
   outputType: string,
-  outputConfig: Record<string, unknown> | string | null,
+  outputConfig: OutputConfig | Record<string, unknown> | string | null,
   enabled: boolean | number
 ): Prompt {
   const configStr =
@@ -176,6 +196,17 @@ export function createRun(promptId: number): number {
 
 export function getRun(id: number): Run | undefined {
   return db.prepare('SELECT * FROM runs WHERE id = ?').get(id) as Run | undefined;
+}
+
+export function markStaleRunsFailed(reason = 'Server restarted unexpectedly'): number {
+  const result = db
+    .prepare(
+      `UPDATE runs
+       SET status = 'error', error = ?, finished_at = CURRENT_TIMESTAMP
+       WHERE status = 'running'`
+    )
+    .run(reason);
+  return result.changes;
 }
 
 export function getRunHistory(promptId: number, limit = 50): Run[] {

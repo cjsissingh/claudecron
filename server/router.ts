@@ -7,7 +7,7 @@ import { marked } from 'marked';
 import { getConfig } from './db';
 import type { Prompt, AppConfig } from './db';
 
-type PromptWithConfig = Prompt & { output_config: Record<string, unknown> };
+type PromptWithConfig = Prompt;
 
 let mailer: ReturnType<typeof nodemailer.createTransport> | null = null;
 
@@ -45,10 +45,10 @@ export function sendEmail(
     throw new Error('Email not configured. Please configure SMTP settings.');
   }
 
-  const emailConfig = prompt.output_config as { to?: string; subject?: string };
-  if (!emailConfig || !emailConfig.to) {
+  if (prompt.output_config?.type !== 'email') {
     throw new Error('Email recipient not specified in output config');
   }
+  const emailConfig = prompt.output_config;
 
   const now = new Date().toLocaleString();
   const subject = `[claudecron] ${prompt.name} - ${now}`;
@@ -118,10 +118,10 @@ export function sendEmail(
 }
 
 export function appendToFile(prompt: PromptWithConfig, output: string): void {
-  const filePath = (prompt.output_config as { path?: string })?.path;
-  if (!filePath) {
+  if (prompt.output_config?.type !== 'file') {
     throw new Error('File path not specified in output config');
   }
+  const filePath = prompt.output_config.path;
 
   const resolvedPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
 
@@ -143,10 +143,10 @@ export function sendToWebhook(
   status: string,
   error: string | null
 ): Promise<{ statusCode: number; body: string }> {
-  const webhookUrl = (prompt.output_config as { url?: string })?.url;
-  if (!webhookUrl) {
+  if (prompt.output_config?.type !== 'webhook') {
     throw new Error('Webhook URL not specified in output config');
   }
+  const webhookUrl = prompt.output_config.url;
 
   const payload = {
     timestamp: new Date().toISOString(),

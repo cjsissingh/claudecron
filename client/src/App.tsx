@@ -9,13 +9,19 @@ import { Clock, Settings as SettingsIcon, Plus, Menu, Sun, Moon } from 'lucide-r
 import { cn } from './lib/utils';
 import { useTheme } from './lib/theme';
 
+export type OutputConfig =
+  | { type: 'email'; to: string; subject?: string }
+  | { type: 'file'; path: string }
+  | { type: 'webhook'; url: string }
+  | { type: 'log' };
+
 export interface Prompt {
   id: number;
   name: string;
   promptText: string;
   schedule: string;
   outputType: string;
-  outputConfig: Record<string, unknown>;
+  outputConfig: OutputConfig | null;
   enabled: boolean;
   created_at: string;
   updated_at: string;
@@ -27,22 +33,29 @@ interface ServerPrompt {
   prompt_text: string;
   schedule: string;
   output_type: string;
-  output_config: Record<string, unknown> | string | null;
+  output_config: OutputConfig | string | null;
   enabled: number | boolean;
   created_at: string;
   updated_at: string;
 }
 
 function toClient(p: ServerPrompt): Prompt {
+  let outputConfig: OutputConfig | null = null;
+  if (typeof p.output_config === 'string') {
+    try {
+      outputConfig = JSON.parse(p.output_config) as OutputConfig;
+    } catch {
+      outputConfig = null;
+    }
+  } else {
+    outputConfig = p.output_config;
+  }
   return {
     ...p,
     enabled: !!p.enabled,
     promptText: p.prompt_text,
     outputType: p.output_type,
-    outputConfig:
-      typeof p.output_config === 'string'
-        ? (JSON.parse(p.output_config || '{}') as Record<string, unknown>)
-        : (p.output_config ?? {}),
+    outputConfig,
   };
 }
 

@@ -15,7 +15,10 @@
     "lint:fix": "eslint server scripts --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit && cd client && npx tsc --noEmit"
+    "typecheck": "tsc --noEmit && cd client && npx tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "better-sqlite3": "^12.8.0",
@@ -37,12 +40,14 @@
     "@typescript-eslint/eslint-plugin": "^8.57.0",
     "@typescript-eslint/parser": "^8.57.0",
     "@vitejs/plugin-react": "^5.2.0",
+    "@vitest/coverage-v8": "^4.1.7",
     "eslint": "^10.0.3",
     "eslint-config-prettier": "^10.1.8",
     "nodemon": "^3.0.2",
     "prettier": "^3.8.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.7"
   },
   "engines": {
     "node": ">=24.0.0"
